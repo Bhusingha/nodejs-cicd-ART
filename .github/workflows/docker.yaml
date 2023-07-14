@@ -1,0 +1,32 @@
+name: Build and push Docker image
+run-name: "Building Docker image by ${{ github.event_name }}: ${{ }}"
+
+on:
+  push:
+    tags: "**"
+
+job:
+  test:
+    name: Running test workflow
+    uses: ./.github/workflowss/test.yaml
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checking out ${{ github.ref }} ${{ github.sha }}
+        uses: actions/checlout@v3
+      - name: Set uo QEMU for Buildx
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets/DOCKERHUB_USERNAME }}
+          password: ${{ secrets/DOCKERHUB_TOKEN }}
+      - name: Build and push DOcker image
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          file: ./Dockerfile
+          tags: ${{ secrets/DOCKERHUB_USERNAME }}//nodejs-cicd-art:${{ github.ref_name}}
